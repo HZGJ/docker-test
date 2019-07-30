@@ -1,0 +1,71 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    name: copilot-analyzer
+  name: copilot-analyzer
+spec:
+  template:
+    spec:
+      containers:
+          - image: copilot/copilot-analyzer
+            name: copilot-analyzer
+            imagePullPolicy: IfNotPresent
+            volumeMounts:
+              - name: git-source
+                mountPath: /workspace
+            envFrom:
+              - configMapRef:
+                  name: repo-info
+            env:
+              - name: MONGO_HOST
+                value: "mongo"
+              - name: MONGO_PORT
+                value: "27017"
+              - name: WEBHOOK_URL
+                value: "http://copilot-api:7001"
+              - name: ROOT_PATH
+                value: "/workspace"
+          # - image: copilot/copilot-audit
+          #   name: copilot-audit
+          #   imagePullPolicy: IfNotPresent
+          #   volumeMounts:
+          #     - name: git-source
+          #       mountPath: /workspace
+          #   envFrom:
+          #     - configMapRef:
+          #         name: repo-info
+          #   env:
+          #     - name: WEBHOOK_URL
+          #       value: "http://copilot-api:7001"
+          #     - name: ROOT_PATH
+          #       value: "/workspace"
+      initContainers:
+        - image: copilot/copilot-histories
+          name: copilot-histories
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: git-source
+              mountPath: /workspace
+          securityContext:
+            runAsUser: 65533 # git-sync user
+          envFrom:
+            - configMapRef:
+                name: repo-info
+          env:
+            - name: MONGO_HOST
+              value: "mongo"
+            - name: MONGO_PORT
+              value: "27017"
+            - name: WEBHOOK_URL
+              value: "http://copilot-api:7001"
+            - name: ROOT_PATH
+              value: /workspace
+            - name: ACTION
+              value: init
+      volumes:
+        - name: git-source
+          emptyDir: {}
+      restartPolicy: Never
+  backoffLimit: 0
+  completions: 1
