@@ -16,7 +16,7 @@ spec:
                 mountPath: /workspace
             envFrom:
               - configMapRef:
-                  name: repo-info
+                  name: ${repoInfo}
             env:
               - name: MONGO_HOST
                 value: "mongo"
@@ -26,20 +26,20 @@ spec:
                 value: "http://copilot-api:7001"
               - name: ROOT_PATH
                 value: "/workspace"
-          # - image: copilot/copilot-audit
-          #   name: copilot-audit
-          #   imagePullPolicy: IfNotPresent
-          #   volumeMounts:
-          #     - name: git-source
-          #       mountPath: /workspace
-          #   envFrom:
-          #     - configMapRef:
-          #         name: repo-info
-          #   env:
-          #     - name: WEBHOOK_URL
-          #       value: "http://copilot-api:7001"
-          #     - name: ROOT_PATH
-          #       value: "/workspace"
+          - image: copilot/copilot-audit
+            name: copilot-audit
+            imagePullPolicy: IfNotPresent
+            volumeMounts:
+              - name: git-source
+                mountPath: /workspace
+            envFrom:
+              - configMapRef:
+                  name: ${repoInfo}
+            env:
+              - name: WEBHOOK_URL
+                value: "http://copilot-api:7001"
+              - name: ROOT_PATH
+                value: "/workspace"
       initContainers:
         - image: copilot/copilot-histories
           name: copilot-histories
@@ -51,7 +51,7 @@ spec:
             runAsUser: 65533 # git-sync user
           envFrom:
             - configMapRef:
-                name: repo-info
+                name: ${repoInfo}
           env:
             - name: MONGO_HOST
               value: "mongo"
