@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    name: copilot-audit
+  name: copilot-audit
+spec:
+  template:
+    spec:
+      containers:
+        - image: registry.cn-hangzhou.aliyuncs.com/gongjia/copilot-audit:0.5.0
+          name: copilot-audit
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: audit-source
+              mountPath: /workspace
+          envFrom:
+            - configMapRef:
+                name: ${repoInfo}
+          env:
+            - name: WEBHOOK_URL
+              value: "http://copilot-api:7001"
+            - name: ROOT_PATH
+              value: "/workspace"
+      initContainers:
+        - image: registry.cn-hangzhou.aliyuncs.com/gongjia/copilot-histories:0.5.0
+          name: copilot-histories
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: audit-source
+              mountPath: /workspace
+          securityContext:
+            runAsUser: 65533 # git-sync user
+          envFrom:
+            - configMapRef:
+                name: ${repoInfo}
+          env:
+            - name: WEBHOOK_URL
+              value: "http://copilot-api:7001"
+            - name: ROOT_PATH
+              value: /workspace
+      volumes:
+        - name: audit-source
+          emptyDir: {}
+      restartPolicy: Never
+  backoffLimit: 0
+  completions: 1
