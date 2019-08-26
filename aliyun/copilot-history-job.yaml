@@ -49,6 +49,16 @@ spec:
               value: "http://copilot-api:7001"
             - name: ROOT_PATH
               value: /workspace
+            - name: USER_NAME
+              valueFrom: 
+                secretKeyRef:
+                  name: ${secret-name}
+                  key: userName
+            - name: PASSWORD
+              valueFrom: 
+                secretKeyRef:
+                  name: ${secret-name}
+                  key: password
       volumes:
         - name: git-source
           emptyDir: {}
