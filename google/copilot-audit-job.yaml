@@ -2,8 +2,8 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   labels:
-    name: copilot-audit
-  name: copilot-audit
+    name: ${copilot-audit}
+  name: ${copilot-audit}
 spec:
   template:
     spec:
@@ -40,7 +40,7 @@ spec:
             - name: ROOT_PATH
               value: /workspace
             - name: ACCESS_TOKEN
-              valueFrom: 
+              valueFrom:
                 secretKeyRef:
                   name: ${secret-name}
                   key: accessToken

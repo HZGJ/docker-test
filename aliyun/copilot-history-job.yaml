@@ -2,32 +2,32 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   labels:
-    name: copilot-history
-  name: copilot-history
+    name: ${copilot-history}
+  name: ${copilot-history}
 spec:
   template:
     spec:
       containers:
-          - image: registry.cn-hangzhou.aliyuncs.com/gongjia/copilot-analyzer:1.8.0
-            name: copilot-analyzer
-            imagePullPolicy: Always
-            volumeMounts:
-              - name: git-source
-                mountPath: /workspace
-            envFrom:
-              - configMapRef:
-                  name: ${repoInfo}
-            env:
-              - name: MONGO_HOST
-                value: "mongo"
-              - name: MONGO_PORT
-                value: "27017"
-              - name: WEBHOOK_URL
-                value: "http://copilot-api:7001"
-              - name: ROOT_PATH
-                value: "/workspace"
-              - name: SERVER_PORT
-                value: "3000"
+        - image: registry.cn-hangzhou.aliyuncs.com/gongjia/copilot-analyzer:1.8.0
+          name: copilot-analyzer
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: git-source
+              mountPath: /workspace
+          envFrom:
+            - configMapRef:
+                name: ${repoInfo}
+          env:
+            - name: MONGO_HOST
+              value: "mongo"
+            - name: MONGO_PORT
+              value: "27017"
+            - name: WEBHOOK_URL
+              value: "http://copilot-api:7001"
+            - name: ROOT_PATH
+              value: "/workspace"
+            - name: SERVER_PORT
+              value: "3000"
       initContainers:
         - image: registry.cn-hangzhou.aliyuncs.com/gongjia/copilot-histories:0.5.0
           name: copilot-histories
@@ -50,7 +50,7 @@ spec:
             - name: ROOT_PATH
               value: /workspace
             - name: ACCESS_TOKEN
-              valueFrom: 
+              valueFrom:
                 secretKeyRef:
                   name: ${secret-name}
                   key: accessToken

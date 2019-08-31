@@ -2,8 +2,8 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   labels:
-    name: copilot-history
-  name: copilot-history
+    name: ${copilot-history}
+  name: ${copilot-history}
 spec:
   template:
     spec:

@@ -2,8 +2,8 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   labels:
-    name: copilot-audit
-  name: copilot-audit
+    name: ${copilot-audit}
+  name: ${copilot-audit}
 spec:
   template:
     spec:
