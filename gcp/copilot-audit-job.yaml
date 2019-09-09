@@ -8,7 +8,7 @@ spec:
   template:
     spec:
       containers:
-        - image: gcr.io/kube-test-241304/copilot-audit:0.5.0
+        - image: gcr.io/metatype-dev/copilot-audit:0.9.0
           name: copilot-audit
           imagePullPolicy: Always
           volumeMounts:
@@ -23,7 +23,7 @@ spec:
             - name: ROOT_PATH
               value: "/workspace"
       initContainers:
-        - image: gcr.io/kube-test-241304/copilot-histories:0.5.0
+        - image: gcr.io/metatype-dev/copilot-histories:0.9.0
           name: copilot-histories
           imagePullPolicy: Always
           volumeMounts:
