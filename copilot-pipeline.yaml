@@ -16,6 +16,8 @@ spec:
       type: string
     - name: uploadUrl
       type: string
+    - name: key
+      type: string
   tasks:
     - name: npm-install
       taskRef:
@@ -34,6 +36,8 @@ spec:
           value: $(params.isTag)
         - name: revision
           value: $(params.revision)
+        - name: key
+          value: $(params.key)
     - name: npm-test
       taskRef:
         name: npm-test

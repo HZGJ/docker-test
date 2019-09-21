@@ -16,6 +16,8 @@ spec:
         type: string
       - name: revision
         type: string
+      - name: key
+        type: string
   outputs:
     resources:
       - name: workspace
@@ -41,6 +43,7 @@ spec:
             "repoUrl": "$(inputs.params.repoUrl)", 
             "isTag": "$(inputs.params.isTag)",
             "branch": "$(inputs.params.revision)"
+            "key": "$(inputs.params.key)"
           }
           EOF
 ---
