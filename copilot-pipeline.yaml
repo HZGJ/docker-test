@@ -1,0 +1,203 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: npm-install
+  namespace: copilot-namespace
+spec:
+  inputs:
+    resources:
+      - name: workspace
+        type: git
+        targetPath: src
+    params:
+      - name: repoUrl
+        type: string
+      - name: isTag
+        type: string
+      - name: revision
+        type: string
+  outputs:
+    resources:
+      - name: workspace
+        type: git
+  steps:
+    - name: npm-install
+      image: node:lts
+      command: ["/bin/bash"]
+      args: ["-c", "npm install"]
+      workingDir: $(inputs.resources.workspace.path)
+    - name: git-info
+      image: alpine/git
+      command: ["/bin/sh"]
+      workingDir: /workspace/src
+      args:
+        - -ce
+        - |
+          set -ex
+          cat <<EOF > ./git-info.json
+          {
+            "sha": "$(git rev-parse HEAD)",
+            "workspace": "$(inputs.resources.workspace.path)",
+            "repoUrl": "$(inputs.params.repoUrl)", 
+            "isTag": "$(inputs.params.isTag)",
+            "branch": "$(inputs.params.revision)"
+          }
+          EOF
+---
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: npm-test
+  namespace: copilot-namespace
+spec:
+  inputs:
+    resources:
+      - name: workspace
+        type: git
+        targetPath: src
+    params:
+      - name: uploadUrl
+        type: string
+  steps:
+    - name: npm-test
+      image: node:lts
+      command: ["/bin/bash"]
+      args:
+        [
+          "-c",
+          "npm run test -- --coverage --json --outputFile=./coverage/test-results.json",
+        ]
+      workingDir: $(inputs.resources.workspace.path)
+    - name: upload-test-results
+      image: endeveit/docker-jq
+      args:
+        - -ce
+        - |
+          jq -s '{"git": .[0], "data": .[1], "type": "testing"}' ./git-info.json ./coverage/test-results.json | curl -H "Content-Type: application/json" -d @- -X POST $(inputs.params.uploadUrl)/test
+      workingDir: $(inputs.resources.workspace.path)
+---
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: npm-audit
+  namespace: copilot-namespace
+spec:
+  inputs:
+    resources:
+      - name: workspace
+        type: git
+        targetPath: src
+    params:
+      - name: uploadUrl
+        type: string
+  steps:
+    - name: npm-audit
+      image: node:lts
+      command: ["/bin/bash"]
+      args: ["-c", "npm audit --json | tee audit.json"]
+      workingDir: $(inputs.resources.workspace.path)
+    - name: upload-audit-results
+      image: endeveit/docker-jq
+      args:
+        - -ce
+        - |
+          jq -s '{"git": .[0], "data": .[1], "type": "security"}' ./git-info.json ./audit.json | curl -H "Content-Type: application/json" -d @- -X POST $(inputs.params.uploadUrl)/audit
+      workingDir: $(inputs.resources.workspace.path)
+---
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: npm-outdated
+  namespace: copilot-namespace
+spec:
+  inputs:
+    resources:
+      - name: workspace
+        type: git
+        targetPath: src
+    params:
+      - name: uploadUrl
+        type: string
+  steps:
+    - name: npm-outdated
+      image: node:lts
+      command: ["/bin/bash"]
+      args: ["-c", "npm outdated --json | tee outdated.json"]
+      workingDir: $(inputs.resources.workspace.path)
+    - name: upload-outdated-results
+      image: endeveit/docker-jq
+      args:
+        - -ce
+        - |
+          jq -s '{"git": .[0], "data": .[1], "type": "npmcheck"}' ./git-info.json ./outdated.json | curl -H "Content-Type: application/json" -d @- -X POST $(inputs.params.uploadUrl)/audit
+      workingDir: $(inputs.resources.workspace.path)
+---
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: copilot-pipeline
+  namespace: copilot-namespace
+spec:
+  resources:
+    - name: source-repo
+      type: git
+  params:
+    - name: repoUrl
+      type: string
+    - name: isTag
+      type: string
+    - name: revision
+      type: string
+    - name: uploadUrl
+      type: string
+  tasks:
+    - name: npm-install
+      taskRef:
+        name: npm-install
+      resources:
+        inputs:
+          - name: workspace
+            resource: source-repo
+        outputs:
+          - name: workspace
+            resource: source-repo
+      params:
+        - name: repoUrl
+          value: $(params.repoUrl)
+        - name: isTag
+          value: $(params.isTag)
+        - name: revision
+          value: $(params.revision)
+    - name: npm-test
+      taskRef:
+        name: npm-test
+      resources:
+        inputs:
+          - name: workspace
+            resource: source-repo
+            from: [npm-install]
+      params:
+        - name: uploadUrl
+          value: $(params.uploadUrl)
+    - name: npm-audit
+      taskRef:
+        name: npm-audit
+      resources:
+        inputs:
+          - name: workspace
+            resource: source-repo
+            from: [npm-install]
+      params:
+        - name: uploadUrl
+          value: $(params.uploadUrl)
+    - name: npm-outdated
+      taskRef:
+        name: npm-outdated
+      resources:
+        inputs:
+          - name: workspace
+            resource: source-repo
+            from: [npm-install]
+      params:
+        - name: uploadUrl
+          value: $(params.uploadUrl)
