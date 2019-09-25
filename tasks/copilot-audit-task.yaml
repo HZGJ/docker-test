@@ -1,0 +1,70 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: ${copilot-audit}
+  namespace: copilot-namespace
+spec: 
+  inputs:
+    resources:
+      - name: workspace
+        type: git
+        targetPath: src
+    params:
+      - name: repoUrl
+        type: string
+      - name: uploadUrl
+        type: string
+      - name: isTag
+        type: string
+      - name: revision
+        type: string
+      - name: key
+        type: string
+  steps:
+    - name: git-info
+      image: alpine/git
+      command: ["/bin/sh"]
+      workingDir: $(inputs.resources.workspace.path)
+      args:
+        - -ce
+        - |
+          set -ex
+          cat <<EOF > ./git-info.json
+          {
+            "sha": "$(git rev-parse HEAD)",
+            "workspace": "$(inputs.resources.workspace.path)",
+            "repoUrl": "$(inputs.params.repoUrl)", 
+            "isTag": "$(inputs.params.isTag)",
+            "branch": "$(inputs.params.revision)",
+             "key": "$(inputs.params.key)"
+          }
+          EOF
+    - name: npm-install
+      image: node:lts
+      command: ["/bin/bash"]
+      args: ["-c", "npm install"]
+      workingDir: $(inputs.resources.workspace.path)
+    - name: npm-audit
+      image: node:lts
+      command: ["/bin/bash"]
+      args: ["-c", "npm audit --json | tee audit.json"]
+      workingDir: $(inputs.resources.workspace.path)
+    - name: upload-audit-results
+      image: endeveit/docker-jq
+      args:
+        - -ce
+        - |
+          jq -s '{"git": .[0], "data": .[1], "type": "security"}' ./git-info.json ./audit.json | curl -H "Content-Type: application/json" -d @- -X POST $(inputs.params.uploadUrl)/audit
+      workingDir: $(inputs.resources.workspace.path)
+    - name: npm-outdated
+      image: node:lts
+      command: ["/bin/bash"]
+      args: ["-c", "npm outdated --json | tee outdated.json"]
+      workingDir: $(inputs.resources.workspace.path)
+    - name: upload-outdated-results
+      image: endeveit/docker-jq
+      args:
+        - -ce
+        - |
+          jq -s '{"git": .[0], "data": .[1], "type": "npmcheck"}' ./git-info.json ./outdated.json | curl -H "Content-Type: application/json" -d @- -X POST $(inputs.params.uploadUrl)/audit
+      workingDir: $(inputs.resources.workspace.path)

@@ -1,0 +1,62 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: ${copilot-test}
+  namespace: copilot-namespace
+spec:
+  inputs:
+    resources:
+      - name: workspace
+        type: git
+        targetPath: src
+    params:
+      - name: repoUrl
+        type: string
+      - name: uploadUrl
+        type: string
+      - name: isTag
+        type: string
+      - name: revision
+        type: string
+      - name: key
+        type: string
+  steps:
+    - name: git-info
+      image: alpine/git
+      command: ["/bin/sh"]
+      workingDir: $(inputs.resources.workspace.path)
+      args:
+        - -ce
+        - |
+          set -ex
+          cat <<EOF > ./git-info.json
+          {
+            "sha": "$(git rev-parse HEAD)",
+            "workspace": "$(inputs.resources.workspace.path)",
+            "repoUrl": "$(inputs.params.repoUrl)", 
+            "isTag": "$(inputs.params.isTag)",
+            "branch": "$(inputs.params.revision)",
+            "key": "$(inputs.params.key)"
+          }
+          EOF
+    - name: npm-install
+      image: node:lts
+      command: ["/bin/bash"]
+      args: ["-c", "npm install"]
+      workingDir: $(inputs.resources.workspace.path)
+    - name: npm-test
+      image: node:lts
+      command: ["/bin/bash"]
+      args:
+        [
+          "-c",
+          "npm run test -- --coverage --json --outputFile=./coverage/test-results.json; ls -l ./coverage/test-results.json",
+        ]
+      workingDir: $(inputs.resources.workspace.path)
+    - name: upload-test-results
+      image: endeveit/docker-jq
+      args:
+        - -ce
+        - |
+          jq -s '{"git": .[0], "data": .[1], "type": "testing"}' ./git-info.json ./coverage/test-results.json | curl -H "Content-Type: application/json" -d @- -X POST $(inputs.params.uploadUrl)/test
+      workingDir: $(inputs.resources.workspace.path)
