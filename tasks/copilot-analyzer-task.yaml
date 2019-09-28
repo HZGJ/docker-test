@@ -10,15 +10,19 @@ spec:
         type: git
         targetPath: src
     params:
-      - name: repoName
-        type: string
       - name: repoUrl
         type: string
-      - name: repoRevision
+      - name: revision
         type: string
       - name: key
         type: string
       - name: type
+        type: string
+      - name: uploadUrl
+        type: string
+      - name: isTag
+        type: string
+      - name: token
         type: string
   steps:
     - name: git-info
@@ -35,21 +39,21 @@ spec:
           }
           EOF
     - name: run-analyzer
-      image: registry.cn-hangzhou.aliyuncs.com/gongjia/copilot-analyzer:1.8.3
+      image: registry.cn-hangzhou.aliyuncs.com/gongjia/copilot-analyzer:1.8.5
       env:
-        - name: REPO_NAME
-          value: $(inputs.params.repoName)
         - name: REPO_URL
           value: $(inputs.params.repoUrl)
         - name: REPO_REVISION
-          value: $(inputs.params.repoRevision)
+          value: $(inputs.params.revision)
         - name: WEBHOOK_URL
-          value: http://copilot-api:7001
+          value: $(inputs.params.uploadUrl)
         - name: ROOT_PATH
           value: $(inputs.resources.workspace.path)
         - name: JOB_ID
           value: $(inputs.params.key)
-        - name: ANALYZER_TYPE
-          value:  $(inputs.params.type)
+        - name: ANALYZE_TYPE
+          value: $(inputs.params.type)
+        - name: ACCESS_TOKEN
+          value: $(inputs.params.token)
       command: ["/bin/sh"]
       args: ["-c", "/app/copilot-analyzer"]

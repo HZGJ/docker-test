@@ -5,24 +5,26 @@ metadata:
   namespace: copilot-namespace
 spec:
   inputs:
-    resources:
-      - name: workspace
-        type: git
-        targetPath: src
     params:
-      - name: repoUrl
-        type: string
-      - name: revision
-        type: string
-      - name: uploadUrl
-        type: string
-      - name: key
-        type: string
+     - name: repoUrl
+       type: string
+     - name: uploadUrl
+       type: string
+     - name: key
+       type: string
   steps:
+    - name: git-clone
+      image: alpine/git
+      command: ["/bin/sh"]
+      workingDir: /workspace/src
+      args:
+       [
+         "-c",'git clone $(inputs.params.repoUrl) /workspace/src'
+       ]
     - name: git-info
       image: alpine/git
       command: ["/bin/sh"]
-      workingDir: $(inputs.resources.workspace.path)
+      workingDir: /workspace/src
       args:
         - -ce
         - |
@@ -36,7 +38,7 @@ spec:
     - name: jq
       image: endeveit/docker-jq
       command: ["/bin/sh"]
-      workingDir: $(inputs.resources.workspace.path)
+      workingDir: /workspace/src
       args:
         - -ce
         - |
@@ -51,7 +53,7 @@ spec:
     - name: jq-http
       image: endeveit/docker-jq
       command: ["/bin/sh"]
-      workingDir: $(inputs.resources.workspace.path)
+      workingDir: /workspace/src
       args:
         - -ce
         - |
