@@ -1,0 +1,55 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: ${copilot-analyzer}
+  namespace: copilot-namespace
+spec:
+  inputs:
+    resources:
+      - name: workspace
+        type: git
+        targetPath: src
+    params:
+      - name: repoName
+        type: string
+      - name: repoUrl
+        type: string
+      - name: repoRevision
+        type: string
+      - name: key
+        type: string
+      - name: type
+        type: string
+  steps:
+    - name: git-info
+      image: alpine/git
+      command: ["/bin/sh"]
+      workingDir: $(inputs.resources.workspace.path)
+      args:
+        - -ce
+        - |
+          set -ex
+          cat <<EOF > ./git-info.json
+          {
+            "sha": "$(git rev-parse HEAD)"
+          }
+          EOF
+    - name: run-analyzer
+      image: registry.cn-hangzhou.aliyuncs.com/gongjia/copilot-analyzer:1.8.3
+      env:
+        - name: REPO_NAME
+          value: $(inputs.params.repoName)
+        - name: REPO_URL
+          value: $(inputs.params.repoUrl)
+        - name: REPO_REVISION
+          value: $(inputs.params.repoRevision)
+        - name: WEBHOOK_URL
+          value: http://copilot-api:7001
+        - name: ROOT_PATH
+          value: $(inputs.resources.workspace.path)
+        - name: JOB_ID
+          value: $(inputs.params.key)
+        - name: ANALYZER_TYPE
+          name:  $(inputs.params.type)
+      command: ["/bin/sh"]
+      args: ["-c", "/app/copilot-analyzer"]

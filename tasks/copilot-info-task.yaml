@@ -1,0 +1,55 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: ${copilot-info}
+  namespace: copilot-namespace
+spec:
+  inputs:
+    resources:
+      - name: workspace
+        type: git
+        targetPath: src
+    params:
+      - name: repoUrl
+        type: string
+      - name: revision
+        type: string
+      - name: uploadUrl
+        type: string
+  steps:
+    - name: git-info
+      image: alpine/git
+      command: ["/bin/sh"]
+      workingDir: $(inputs.resources.workspace.path)
+      args:
+        - -ce
+        - |
+          set -ex
+          cat <<EOF > ./branches.txt
+            $(git branch --list --remote)
+          EOF
+          cat <<EOF > ./tags.txt
+            $(git show-ref --tags)
+          EOF
+    - name: jq
+      image: endeveit/docker-jq
+      command: ["/bin/sh"]
+      workingDir: $(inputs.resources.workspace.path)
+      args:
+        - -ce
+        - |
+          cat <<EOF > ./git-info.json
+            {
+              "url": "$(inputs.params.repoUrl)",
+              "branches": $(cat ./branches.txt | jq -R . | jq -s '.'),
+              "tags": $(cat ./tags.txt | jq -R . | jq -s '.')
+            }
+          EOF
+    - name: jq-http
+      image: endeveit/docker-jq
+      command: ["/bin/sh"]
+      workingDir: $(inputs.resources.workspace.path)
+      args:
+        - -ce
+        - |
+          cat git-info.json | jq '.' | curl -H 'Content-Type: application/json' -d @- -X POST $(inputs.params.uploadUrl)/task/info
