@@ -50,6 +50,6 @@ spec:
         - name: JOB_ID
           value: $(inputs.params.key)
         - name: ANALYZER_TYPE
-          name:  $(inputs.params.type)
+          value:  $(inputs.params.type)
       command: ["/bin/sh"]
       args: ["-c", "/app/copilot-analyzer"]
