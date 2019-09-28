@@ -16,6 +16,8 @@ spec:
         type: string
       - name: uploadUrl
         type: string
+      - name: key
+        type: string
   steps:
     - name: git-info
       image: alpine/git
@@ -41,6 +43,7 @@ spec:
           cat <<EOF > ./git-info.json
             {
               "url": "$(inputs.params.repoUrl)",
+              "key":"$(inputs.params.key)",
               "branches": $(cat ./branches.txt | jq -R . | jq -s '.'),
               "tags": $(cat ./tags.txt | jq -R . | jq -s '.')
             }
