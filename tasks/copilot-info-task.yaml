@@ -30,7 +30,7 @@ spec:
         - |
           set -ex
           cat <<EOF > ./branches.txt
-            $(git branch --list --remote)
+            $(git ls-remote --heads origin)
           EOF
           cat <<EOF > ./tags.txt
             $(git show-ref --tags)

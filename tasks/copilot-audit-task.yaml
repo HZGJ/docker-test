@@ -36,7 +36,7 @@ spec:
             "repoUrl": "$(inputs.params.repoUrl)", 
             "isTag": "$(inputs.params.isTag)",
             "branch": "$(inputs.params.revision)",
-             "key": "$(inputs.params.key)"
+            "key": "$(inputs.params.key)"
           }
           EOF
     - name: npm-install
