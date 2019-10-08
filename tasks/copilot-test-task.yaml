@@ -65,5 +65,5 @@ spec:
       args:
         - -ce
         - |
-          jq -s '{"git": .[0], "data": .[1], "type": "coverage"}' ./git-info.json ./coverage/coverage-final.json | curl -H "Content-Type: application/json" -d @- -X POST $(inputs.params.uploadUrl)/test
+          jq -s '{"git": .[0], "data": .[1], "type": "coverage"}' ./git-info.json ./coverage/coverage-summary.json | curl -H "Content-Type: application/json" -d @- -X POST $(inputs.params.uploadUrl)/test
       workingDir: $(inputs.resources.workspace.path)
