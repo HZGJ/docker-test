@@ -38,7 +38,7 @@ spec:
             "branch": "$(inputs.params.revision)",
             "key": "$(inputs.params.key)"
           }
-          EOF
+          EOF 
     - name: npm-install
       image: node:lts
       command: ["/bin/bash"]
@@ -59,4 +59,11 @@ spec:
         - -ce
         - |
           jq -s '{"git": .[0], "data": .[1], "type": "testing"}' ./git-info.json ./coverage/test-results.json | curl -H "Content-Type: application/json" -d @- -X POST $(inputs.params.uploadUrl)/test
+      workingDir: $(inputs.resources.workspace.path)
+    - name: upload-coverage-results
+      image: endeveit/docker-jq
+      args:
+        - -ce
+        - |
+          jq -s '{"git": .[0], "data": .[1], "type": "coverage"}' ./git-info.json ./coverage/coverage-final.json | curl -H "Content-Type: application/json" -d @- -X POST $(inputs.params.uploadUrl)/test
       workingDir: $(inputs.resources.workspace.path)
