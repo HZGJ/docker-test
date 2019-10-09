@@ -38,7 +38,7 @@ spec:
             "branch": "$(inputs.params.revision)",
             "key": "$(inputs.params.key)"
           }
-          EOF 
+          EOF
     - name: npm-install
       image: node:lts
       command: ["/bin/bash"]
