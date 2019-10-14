@@ -40,6 +40,14 @@ spec:
           "-c",
           "${buildScript}",
        ]
+    - name: set-nginx
+      image: node:lts
+      command: ["/bin/sh"]
+      args: ["-c", "mkdir -p /dest/${copilot-buildFolder} && cp -a $(inputs.resources.workspace.path)/${buildFolder}/. /dest/${copilot-buildFolder}"]
+      volumeMounts:
+        - name: data-volume
+          mountPath: /dest
+          subPath: "public"
     - name: write-docker-file
       image: node:lts
       command: ["/bin/sh"]
@@ -64,3 +72,7 @@ spec:
         - --dockerfile=/workspace/src/copilot-Dockerfile
         - --destination=${inputs.params.imageUrl}:${inputs.params.imageTag}
         - --context=/workspace/src/$(inputs.params.pathToContext)
+  volumes:
+    - name: data-volume
+      persistentVolumeClaim:
+        claimName: nfs

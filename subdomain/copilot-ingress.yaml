@@ -1,0 +1,21 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ${copilot-ingress}
+  namespace: copilot-namespace
+  annotations:
+    ingress.kubernetes.io/rewrite-target: /
+    certmanager.k8s.io/cluster-issuer: letsencrypt-staging-issuer
+spec:
+  tls:
+    - hosts:
+        - ${copilot-host}
+      secretName: letsencrypt-staging-secret
+  rules:
+    - host: ${copilot-host}
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: copilot-subdomain
+              servicePort: 9001
