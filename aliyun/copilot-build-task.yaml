@@ -81,7 +81,7 @@ spec:
       args:
         - -ce
         - |
-          jq -s '{"repoUrl": "$(inputs.params.repoUrl)", "isTag": "$(inputs.params.isTag)", "branch":"$(inputs.params.revision)","sha":"$(inputs.patams.sha)" }' | curl -H "Content-Type: application/json" -d @- -X POST $(inputs.params.uploadUrl)/deploy
+          jq -s '{"repoUrl": "$(inputs.params.repoUrl)", "isTag": "$(inputs.params.isTag)", "branch":"$(inputs.params.revision)","sha":"$(inputs.patams.sha)" }' | curl -H "Content-Type: application/json" -d @- -X POST $(inputs.params.uploadUrl)/deployment
       workingDir: $(inputs.resources.workspace.path)
   volumes:
     - name: data-volume
