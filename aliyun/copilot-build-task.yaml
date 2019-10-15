@@ -12,6 +12,10 @@ spec:
     params:
       - name: repoUrl
         type: string
+      - name: sha
+        type: string
+      - name: uploadUrl
+        type: string
       - name: isTag
         type: string
       - name: revision
@@ -72,6 +76,13 @@ spec:
         - --dockerfile=/workspace/src/copilot-Dockerfile
         - --destination=${inputs.params.imageUrl}:${inputs.params.imageTag}
         - --context=/workspace/src/$(inputs.params.pathToContext)
+    - name: deploy-done
+      image: endeveit/docker-jq
+      args:
+        - -ce
+        - |
+          jq -s '{"repoUrl": "$(inputs.params.repoUrl)", "isTag": "$(inputs.params.isTag)", "branch":"$(inputs.params.revision)","sha":"$(inputs.patams.sha)" }' | curl -H "Content-Type: application/json" -d @- -X POST $(inputs.params.uploadUrl)/deploy
+      workingDir: $(inputs.resources.workspace.path)
   volumes:
     - name: data-volume
       persistentVolumeClaim:
