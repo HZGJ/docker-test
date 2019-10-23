@@ -1,0 +1,89 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: ${copilot-build}
+  namespace: copilot-namespace
+spec:
+  inputs:
+    resources:
+      - name: workspace
+        type: git
+        targetPath: src
+    params:
+      - name: repoUrl
+        type: string
+      - name: sha
+        type: string
+      - name: uploadUrl
+        type: string
+      - name: isTag
+        type: string
+      - name: revision
+        type: string
+      - name: key
+        type: string
+      - name: imageUrl
+        type: string
+      - name: imageTag
+        type: string
+      - name: pathToContext
+        type: string
+        default: '.'
+  steps:
+    - name: npm-install
+      image: node:lts
+      command: ["/bin/bash"]
+      args: ["-c", "npm install"]
+      workingDir: $(inputs.resources.workspace.path)
+    - name: npm-build
+      image: node:lts
+      command: ["/bin/sh"]
+      workingDir: $(inputs.resources.workspace.path)
+      args:
+       [
+          "-c",
+          "${buildScript}",
+       ]
+    - name: set-nginx
+      image: node:lts
+      command: ["/bin/sh"]
+      args: ["-c", "mkdir -p /dest/${copilot-buildFolder} && cp -a $(inputs.resources.workspace.path)/${buildFolder}/. /dest/${copilot-buildFolder}"]
+      volumeMounts:
+        - name: data-volume
+          mountPath: /dest
+          subPath: "public"
+    - name: write-docker-file
+      image: node:lts
+      command: ["/bin/sh"]
+      args:
+        - -ce
+        - |
+          set -ex
+          cat <<EOF > ./copilot-Dockerfile
+          FROM busybox
+          WORKDIR /webapp
+          COPY ${buildFolder} .
+          EOF
+      workingDir: $(inputs.resources.workspace.path)
+    - name: build-and-push
+      image: gcr.io/kaniko-project/executor:v0.10.0
+      command: 
+        - /kaniko/executor
+      env:
+        - name: DOCKER_CONFIG
+          value: /builder/home/.docker
+      args:
+        - --dockerfile=/workspace/src/copilot-Dockerfile
+        - --destination=${inputs.params.imageUrl}:${inputs.params.imageTag}
+        - --context=/workspace/src/$(inputs.params.pathToContext)
+    - name: deploy-done
+      image: endeveit/docker-jq
+      args:
+        - -ce
+        - |
+          jq -s '{"repoUrl": "$(inputs.params.repoUrl)", "isTag": "$(inputs.params.isTag)", "branch":"$(inputs.params.revision)","sha":"$(inputs.params.sha)" }' | curl -H "Content-Type: application/json" -d @- -X POST $(inputs.params.uploadUrl)/deployment
+      workingDir: $(inputs.resources.workspace.path)
+  volumes:
+    - name: data-volume
+      persistentVolumeClaim:
+        claimName: nfs
