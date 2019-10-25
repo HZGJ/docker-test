@@ -6,6 +6,8 @@ metadata:
 spec:
   inputs:
     params:
+     - name: url
+       type: string
      - name: repoUrl
        type: string
      - name: uploadUrl
@@ -19,7 +21,7 @@ spec:
       workingDir: /workspace/src
       args:
        [
-         "-c",'git clone $(inputs.params.repoUrl) /workspace/src'
+         "-c",'git clone $(inputs.params.url) /workspace/src'
        ]
     - name: git-info
       image: alpine/git
