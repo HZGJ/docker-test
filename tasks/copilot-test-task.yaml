@@ -40,12 +40,12 @@ spec:
           }
           EOF
     - name: npm-install
-      image: node:lts
+      image: node:10
       command: ["/bin/bash"]
       args: ["-c", "npm install"]
       workingDir: $(inputs.resources.workspace.path)
     - name: npm-test
-      image: node:lts
+      image: node:10
       command: ["/bin/bash"]
       args:
         [

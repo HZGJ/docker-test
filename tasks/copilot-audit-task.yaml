@@ -40,12 +40,12 @@ spec:
           }
           EOF
     - name: npm-install
-      image: node:lts
+      image: node:10
       command: ["/bin/bash"]
       args: ["-c", "npm install"]
       workingDir: $(inputs.resources.workspace.path)
     - name: npm-audit
-      image: node:lts
+      image: node:10
       command: ["/bin/bash"]
       args: ["-c", "npm audit --json | tee audit.json"]
       workingDir: $(inputs.resources.workspace.path)
@@ -57,7 +57,7 @@ spec:
           jq -s '{"git": .[0], "data": .[1], "type": "security"}' ./git-info.json ./audit.json | curl -H "Content-Type: application/json" -d @- -X POST $(inputs.params.uploadUrl)/audit
       workingDir: $(inputs.resources.workspace.path)
     - name: npm-outdated
-      image: node:lts
+      image: node:10
       command: ["/bin/bash"]
       args: ["-c", "npm outdated --json | tee outdated.json"]
       workingDir: $(inputs.resources.workspace.path)

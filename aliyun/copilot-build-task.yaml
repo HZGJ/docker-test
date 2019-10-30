@@ -31,12 +31,12 @@ spec:
         default: '.'
   steps:
     - name: npm-install
-      image: node:lts
+      image: node:10
       command: ["/bin/bash"]
       args: ["-c", "npm install"]
       workingDir: $(inputs.resources.workspace.path)
     - name: npm-build
-      image: node:lts
+      image: node:10
       command: ["/bin/sh"]
       workingDir: $(inputs.resources.workspace.path)
       args:
@@ -45,7 +45,7 @@ spec:
           "${buildScript}",
        ]
     - name: set-nginx
-      image: node:lts
+      image: node:10
       command: ["/bin/sh"]
       args: ["-c", "mkdir -p /dest/${copilot-buildFolder} && cp -a $(inputs.resources.workspace.path)/${buildFolder}/. /dest/${copilot-buildFolder}"]
       volumeMounts:
@@ -53,7 +53,7 @@ spec:
           mountPath: /dest
           subPath: "public"
     - name: write-docker-file
-      image: node:lts
+      image: node:10
       command: ["/bin/sh"]
       args:
         - -ce
