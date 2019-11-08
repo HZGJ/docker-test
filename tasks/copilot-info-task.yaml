@@ -14,6 +14,8 @@ spec:
        type: string
      - name: key
        type: string
+     - name: revision
+       type: string
   steps:
     - name: git-clone
       image: alpine/git
@@ -37,6 +39,9 @@ spec:
           cat <<EOF > ./tags.txt
             $(git show-ref --tags)
           EOF
+          cat <<EOF > ./sha.txt
+            $(git rev-parse HEAD)
+          EOF
     - name: jq
       image: endeveit/docker-jq
       command: ["/bin/sh"]
@@ -48,6 +53,8 @@ spec:
             {
               "url": "$(inputs.params.repoUrl)",
               "key":"$(inputs.params.key)",
+              "revision":"$(inputs.params.revision)",
+              "sha": $(cat ./sha.txt | jq -R .),
               "branches": $(cat ./branches.txt | jq -R . | jq -s '.'),
               "tags": $(cat ./tags.txt | jq -R . | jq -s '.')
             }

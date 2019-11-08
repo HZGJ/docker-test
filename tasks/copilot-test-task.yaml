@@ -50,7 +50,7 @@ spec:
       args:
         [
           "-c",
-          "npm run test -- --coverage --json --outputFile=./coverage/test-results.json; ls -l ./coverage",
+          "${copilot-script} -- --coverage --json --outputFile=./coverage/test-results.json; ls -l ./coverage",
         ]
       workingDir: $(inputs.resources.workspace.path)
     - name: upload-test-results
