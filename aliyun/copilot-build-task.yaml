@@ -22,13 +22,6 @@ spec:
         type: string
       - name: key
         type: string
-      - name: imageUrl
-        type: string
-      - name: imageTag
-        type: string
-      - name: pathToContext
-        type: string
-        default: '.'
   steps:
     - name: npm-install
       image: node:10
@@ -52,30 +45,6 @@ spec:
         - name: data-volume
           mountPath: /dest
           subPath: "public"
-    - name: write-docker-file
-      image: node:10
-      command: ["/bin/sh"]
-      args:
-        - -ce
-        - |
-          set -ex
-          cat <<EOF > ./copilot-Dockerfile
-          FROM busybox
-          WORKDIR /webapp
-          COPY ${buildFolder} .
-          EOF
-      workingDir: $(inputs.resources.workspace.path)
-    - name: build-and-push
-      image: registry.cn-hangzhou.aliyuncs.com/knative-sample/kaniko-project-executor:v0.10.0
-      command: 
-        - /kaniko/executor
-      env:
-        - name: DOCKER_CONFIG
-          value: /builder/home/.docker
-      args:
-        - --dockerfile=/workspace/src/copilot-Dockerfile
-        - --destination=${inputs.params.imageUrl}:${inputs.params.imageTag}
-        - --context=/workspace/src/$(inputs.params.pathToContext)
     - name: deploy-done
       image: endeveit/docker-jq
       args:
