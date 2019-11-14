@@ -1,0 +1,48 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: ${copilot-latest}
+  namespace: copilot-namespace
+spec:
+  inputs:
+    resources:
+     - name: workspace
+       type: git
+       targetPath: src
+    params:
+     - name: repoUrl
+       type: string
+     - name: uploadUrl
+       type: string
+     - name: key
+       type: string
+     - name: isTag
+       type: string
+     - name: revision
+       type: string
+  steps:
+    - name: git-info
+      image: alpine/git
+      command: ["/bin/sh"]
+      workingDir: $(inputs.resources.workspace.path)
+      args:
+        - -ce
+        - |
+          set -ex
+          cat <<EOF > ./git-info.json
+           {
+              "url": "$(inputs.params.repoUrl)",
+              "key":"$(inputs.params.key)",
+              "revision":"$(inputs.params.revision)",
+              "isTag": "$(inputs.params.isTag)",
+              "sha": "$(git rev-parse HEAD)"
+            }
+          EOF
+    - name: jq-http
+      image: endeveit/docker-jq
+      command: ["/bin/sh"]
+      workingDir: $(inputs.resources.workspace.path)
+      args:
+        - -ce
+        - |
+          cat git-info.json | jq '.' | curl -H 'Content-Type: application/json' -d @- -X POST $(inputs.params.uploadUrl)/task/latest
