@@ -39,6 +39,7 @@ spec:
             "key": "$(inputs.params.key)"
           }
           EOF
+      workingDir: $(inputs.resources.workspace.path)
     - name: npm-install
       image: node:10
       command: ["/bin/bash"]
