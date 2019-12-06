@@ -24,7 +24,6 @@ spec:
     - name: git-info
       image: alpine/git
       command: ["/bin/sh"]
-      workingDir: $(inputs.resources.workspace.path)
       args:
         - -ce
         - |
